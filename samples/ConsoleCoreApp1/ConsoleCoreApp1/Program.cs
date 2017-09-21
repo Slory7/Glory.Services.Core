@@ -38,7 +38,7 @@ namespace ConsoleCoreApp1
             TestServices(configuration, serviceProvider).Wait();
         }
 
-        private static async Task TestServices(IConfigurationRoot configuration, ServiceProvider serviceProvider)
+        private static async Task TestServices(IConfigurationRoot configuration, IServiceProvider serviceProvider)
         {
             #region DataCache            
 
@@ -65,9 +65,9 @@ namespace ConsoleCoreApp1
             Console.Read();
         }
 
-        public static ServiceProvider ServiceProvider { get; private set; }
+        public static IServiceProvider ServiceProvider { get; private set; }
 
-        private static void ConfigureServices(ServiceCollection services, IConfigurationRoot configuration)
+        private static void ConfigureServices(IServiceCollection services, IConfigurationRoot configuration)
         {
             services.Configure<AppSettings>(configuration);
 
@@ -90,7 +90,7 @@ namespace ConsoleCoreApp1
             services.AddTransient<DataStoreTest>();
         }
 
-        private static void ConfigureServicesProvider(ServiceProvider serviceProvider)
+        private static void ConfigureServicesProvider(IServiceProvider serviceProvider)
         {
             //configure Glory
             serviceProvider.ConfigureGloryProviders();

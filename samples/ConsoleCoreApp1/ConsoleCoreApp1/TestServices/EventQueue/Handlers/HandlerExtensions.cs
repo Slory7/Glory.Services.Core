@@ -7,7 +7,7 @@ namespace ConsoleCoreApp1.TestServices.EventQueue.Handlers
 {
     internal static class HandlerExtensions
     {
-        public static ServiceCollection RegisterHandlerTypes (this ServiceCollection services)
+        public static IServiceCollection RegisterHandlerTypes (this IServiceCollection services)
         {
             services
                 .AddTransient<AppStartEventHandler>()
