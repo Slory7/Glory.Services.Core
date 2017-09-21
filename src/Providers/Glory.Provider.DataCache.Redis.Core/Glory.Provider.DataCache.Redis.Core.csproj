@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Description>Redis cache provider for Glory.Services.Core data cache service.</Description>
     <PackageId>Glory.Provider.DataCache.Redis.Core</PackageId>
     <Authors>Glory.Provider.DataCache.Redis.Core</Authors>
     <Company>Glory.Provider.DataCache.Redis.Core</Company>
     <Product>Glory.Provider.DataCache.Redis.Core</Product>
-    <Version>0.9.0</Version>
+    <Version>0.9.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

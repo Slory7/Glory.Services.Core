@@ -1,5 +1,4 @@
-﻿using Glory.Services.Core.Config;
-using Glory.Services.Core.DataCache;
+﻿using Glory.Services.Core.DataCache;
 using Glory.Services.Core.DataStore.Providers;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;

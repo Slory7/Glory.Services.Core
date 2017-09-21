@@ -1,7 +1,4 @@
-﻿using Glory.Services.Core.DataCache;
-using Glory.Services.Core.DataCache.Providers;
-using Glory.Services.Core.Config;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Glory.Services.Core.EventQueue.ExternalSubscriptions;
@@ -40,7 +37,7 @@ namespace Glory.Services.Core
             return services;
         }
 
-        public static ServiceProvider ConfigureGloryProviders(this ServiceProvider serviceProvider)
+        public static IServiceProvider ConfigureGloryProviders(this IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
 
