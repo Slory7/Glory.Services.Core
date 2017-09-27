@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Glory.Services.Core.DataCache.Parameters;
 using Glory.Services.Core.DataCache.Providers;
 using Glory.Services.Core.Config;
+using Glory.Services.Core.Common;
 
 #endregion
 
@@ -15,9 +16,6 @@ namespace Glory.Services.Core.DataCache
 {
     public class DataCacheManager : IDataCacheManager
     {
-        private static readonly ReaderWriterLockSlim dictionaryLock = new ReaderWriterLockSlim();
-        private static readonly Dictionary<string, object> uniqueDictionary = new Dictionary<string, object>();
-
         private readonly ILogger _logger;
         public DataCacheManager(ILogger<DataCacheManager> logger)
         {
@@ -97,9 +95,9 @@ namespace Glory.Services.Core.DataCache
             RemoveCache(cacheKey, ProviderLevel.High);
         }
 
-        public long GetListCount<T>(string listName, ProviderLevel level)
+        public long GetListCount(string listName, ProviderLevel level)
         {
-            var count = CachingProvider.Instance(level).GetListCount<T>(listName);
+            var count = CachingProvider.Instance(level).GetListCount(listName);
             return count;
         }
 
@@ -135,6 +133,12 @@ namespace Glory.Services.Core.DataCache
             CachingProvider.Instance(level).RemoveList(listName);
         }
 
+        public long GetHashCount(string hashId, ProviderLevel level)
+        {
+            var count = CachingProvider.Instance(level).GetHashCount(hashId);
+            return count;
+        }
+
         public void SetEntryInHash<TKey, T>(string hashId, TKey key, T value, ProviderLevel level)
         {
             CachingProvider.Instance(level).SetEntryInHash<TKey, T>(hashId, key, value);
@@ -155,11 +159,11 @@ namespace Glory.Services.Core.DataCache
             var provider = CachingProvider.Instance(level);
             if (!provider.IsDistributedCache())
             {
-                object @lock = GetUniqueLockObject<object>(key);
+                object @lock = UniqueObject.GetUniqueObject<object>(key);
                 lock (@lock)
                 {
                     var retVal = provider.IncrementValue(key, count, expiredMinutes, initialCallBack);
-                    RemoveUniqueLockObject(key);
+                    UniqueObject.RemoveUniqueObject(key);
                     return retVal;
                 }
             }
@@ -171,15 +175,52 @@ namespace Glory.Services.Core.DataCache
             var provider = CachingProvider.Instance(level);
             if (!provider.IsDistributedCache())
             {
-                object @lock = GetUniqueLockObject<object>(key);
+                object @lock = UniqueObject.GetUniqueObject<object>(key);
                 lock (@lock)
                 {
                     var retVal = provider.DecrementValue(key, count, expiredMinutes, initialCallBack);
-                    RemoveUniqueLockObject(key);
+                    UniqueObject.RemoveUniqueObject(key);
                     return retVal;
                 }
             }
             return provider.DecrementValue(key, count, expiredMinutes, initialCallBack);
+        }
+
+        public long IncrementValueInHash(string hashId, string key, int count, ProviderLevel level)
+        {
+            var provider = CachingProvider.Instance(level);
+            if (!provider.IsDistributedCache())
+            {
+                object @lock = UniqueObject.GetUniqueObject<object>(key);
+                lock (@lock)
+                {
+                    var retVal = provider.IncrementValueInHash(hashId, key, count);
+                    UniqueObject.RemoveUniqueObject(key);
+                    return retVal;
+                }
+            }
+            return provider.IncrementValueInHash(hashId, key, count);
+        }
+
+        public long DecrementValueInHash(string hashId, string key, int count, ProviderLevel level)
+        {
+            var provider = CachingProvider.Instance(level);
+            if (!provider.IsDistributedCache())
+            {
+                object @lock = UniqueObject.GetUniqueObject<object>(key);
+                lock (@lock)
+                {
+                    var retVal = provider.DecrementValueInHash(hashId, key, count);
+                    UniqueObject.RemoveUniqueObject(key);
+                    return retVal;
+                }
+            }
+            return provider.DecrementValueInHash(hashId, key, count);
+        }
+
+        public List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending, ProviderLevel level)
+        {
+            return CachingProvider.Instance(level).Sort<T>(collectionKey, byField, fieldIsNumber, skip, take, isAscending);
         }
 
         public void ClearCache()
@@ -197,52 +238,6 @@ namespace Glory.Services.Core.DataCache
 
         #endregion
 
-        #region Public Static Methods
-
-        public static T GetUniqueLockObject<T>(string key) where T : new()
-        {
-            object @lock = null;
-            if (dictionaryLock.TryEnterReadLock(new TimeSpan(0, 0, 5)))
-            {
-                try
-                {
-                    //Try to get lock Object (for key) from Dictionary
-                    if (uniqueDictionary.ContainsKey(key))
-                    {
-                        @lock = uniqueDictionary[key];
-                    }
-                }
-                finally
-                {
-                    dictionaryLock.ExitReadLock();
-                }
-            }
-            if (@lock == null)
-            {
-                if (dictionaryLock.TryEnterWriteLock(new TimeSpan(0, 0, 5)))
-                {
-                    try
-                    {
-                        //Double check dictionary
-                        if (!uniqueDictionary.ContainsKey(key))
-                        {
-                            //Create new lock
-                            uniqueDictionary[key] = new T();
-                        }
-                        //Retrieve lock
-                        @lock = uniqueDictionary[key];
-                    }
-                    finally
-                    {
-                        dictionaryLock.ExitWriteLock();
-                    }
-                }
-            }
-            return (T)@lock;
-        }
-
-        #endregion
-
         #region Private Methods
 
         private TObject GetCachedDataInternal<TObject>(CacheItemArgs cacheItemArgs, CacheItemExpiredCallback<TObject> cacheItemExpired)
@@ -253,7 +248,7 @@ namespace Glory.Services.Core.DataCache
             if (EqualityComparer<TObject>.Default.Equals(objObject, default(TObject)))
             {
                 //Get Unique Lock for cacheKey
-                object @lock = GetUniqueLockObject<object>(cacheItemArgs.CacheKey);
+                object @lock = UniqueObject.GetUniqueObject<object>(cacheItemArgs.CacheKey);
 
                 // prevent other threads from entering this block while we regenerate the cache
                 lock (@lock)
@@ -300,32 +295,14 @@ namespace Glory.Services.Core.DataCache
                         }
 
                         //This thread won so remove unique Lock from collection
-                        RemoveUniqueLockObject(cacheItemArgs.CacheKey);
+                        UniqueObject.RemoveUniqueObject(cacheItemArgs.CacheKey);
                     }
                 }
             }
 
             return objObject;
         }
-        private static void RemoveUniqueLockObject(string key)
-        {
-            if (dictionaryLock.TryEnterWriteLock(new TimeSpan(0, 0, 5)))
-            {
-                try
-                {
-                    //check dictionary
-                    if (uniqueDictionary.ContainsKey(key))
-                    {
-                        //Remove lock
-                        uniqueDictionary.Remove(key);
-                    }
-                }
-                finally
-                {
-                    dictionaryLock.ExitWriteLock();
-                }
-            }
-        }
+
         private void ItemRemovedCallback(object key, object value, RemoveReason removedReason, object state)
         {
             //if the item was removed from the cache, log the key and reason to the event log

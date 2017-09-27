@@ -35,7 +35,7 @@ namespace Glory.Services.Core.EventQueue
 
         #region Public Methods
 
-        public void Publish(IntegrationEvent @event, ProviderLevel level = ProviderLevel.Normal)
+        public void Publish(IntegrationEvent @event, ProviderLevel level)
         {
             var eventName = _subsManager.GetEventKey(@event);
             _logger.LogInformation($"Publish Start:{eventName}, ID:{@event.Id}");

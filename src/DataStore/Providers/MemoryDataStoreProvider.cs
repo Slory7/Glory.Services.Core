@@ -8,6 +8,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Glory.Services.Core.Common;
 
 namespace Glory.Services.Core.DataStore.Providers
 {
@@ -15,7 +16,6 @@ namespace Glory.Services.Core.DataStore.Providers
     {
         private readonly IDataCacheManager _cacheManager;
         private readonly ILogger<MemoryDataStoreProvider> _logger;
-
         public MemoryDataStoreProvider(IDataCacheManager cacheManager
             , ILogger<MemoryDataStoreProvider> logger
             )
@@ -113,6 +113,38 @@ namespace Glory.Services.Core.DataStore.Providers
             return true;
         }
 
+        public override async Task<T> IncrementField<T>(Expression<Func<T, bool>> filter, string field, int amount)
+        {
+            string cacheKey = typeof(T).Name;
+            T item = default(T);
+            await Task.Run(() =>
+            {
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                  {
+                      return new List<T>();
+                  });
+                var f = filter.Compile();
+                lock (UniqueObject.GetUniqueObject<object>(cacheKey))
+                {
+                    item = list.Where(f).SingleOrDefault();
+                    if (item != null)
+                    {
+                        var prop = item.GetType().GetProperty(field);
+                        if (prop != null)
+                        {
+                            var propType = prop.PropertyType;
+
+                            var val = (long)prop.GetValue(item) + amount;
+
+                            var objVal = Convert.ChangeType(val, propType);
+                            prop.SetValue(item, objVal);
+                        }
+                    }
+                }
+            });
+            return item;
+        }
+
         public override async Task InsertStageData<T>(int stageMinutes, T doc, string createdDateField)
         {
             string cacheKey = typeof(T).Name + "_" + stageMinutes;
@@ -130,7 +162,7 @@ namespace Glory.Services.Core.DataStore.Providers
                 {
                     var olderThanDate = now.AddMinutes(0 - stageMinutes);
                     await Task.Run(() =>
-                    {                        
+                    {
                         var toRemoveList = list.AsQueryable().Where($"{createdDateField}<DateTimeOffset.Parse(\"{olderThanDate}\")").ToList();
                         toRemoveList.ForEach(t => list.Remove(t));
 

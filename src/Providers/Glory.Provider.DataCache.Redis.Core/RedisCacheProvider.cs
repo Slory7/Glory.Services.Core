@@ -4,6 +4,7 @@ using Glory.Services.Core;
 using Glory.Services.Core.DataCache.Providers;
 using Glory.Services.Core.DataCache.Parameters;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Glory.Provider.DataCache.Redis.Core
 {
@@ -35,43 +36,7 @@ namespace Glory.Provider.DataCache.Redis.Core
 
         #endregion
 
-        #region Abstract Method Implementation
-
-        private RedisClient GetRedisClient()
-        {
-            var cmdMap = CommandMap.Default;
-            switch (ServerType?.ToLower())
-            {
-                case "sentinel":
-                    cmdMap = CommandMap.Sentinel;
-                    break;
-                case "ssdb":
-                    cmdMap = CommandMap.SSDB;
-                    break;
-                case "twemproxy":
-                    cmdMap = CommandMap.Twemproxy;
-                    break;
-            }
-            var options = new ConfigurationOptions
-            {
-                CommandMap = cmdMap,
-                Password = this.Password,
-                ServiceName = this.MasterDB,
-                ClientName = this.ClientName,
-                Ssl = this.Ssl,
-                AllowAdmin = this.AllowAdmin,
-                ConnectTimeout = this.ConnectTimeout,
-                ConnectRetry = this.ConnectRetry,
-                AbortOnConnectFail = this.AbortOnConnectFail
-            };
-
-            foreach (string server in this.Servers.Split(','))
-            {
-                options.EndPoints.Add(server);
-            }
-            var redisClient = new RedisClient(options, this.DBNumber);
-            return redisClient;
-        }
+        #region Abstract Method Implementation             
 
         public override T GetItem<T>(string cacheKey, string scope = null)
         {
@@ -117,7 +82,7 @@ namespace Glory.Provider.DataCache.Redis.Core
             ClearCacheInternal(prefix);
         }
 
-        public override long GetListCount<T>(string listName)
+        public override long GetListCount(string listName)
         {
             var key = GetCacheKey(listName);
             using (var redisClient = this.GetRedisClient())
@@ -178,6 +143,16 @@ namespace Glory.Provider.DataCache.Redis.Core
         {
             string key = GetCacheKey(listName);
             this.Remove(key);
+        }
+
+        public override long GetHashCount(string hashId)
+        {
+            var key = GetCacheKey(hashId);
+            using (var redisClient = this.GetRedisClient())
+            {
+                long lCount = redisClient.GetHashCount(key);
+                return lCount;
+            }
         }
 
         public override T GetValueFromHash<TKey, T>(string hashId, TKey key)
@@ -269,9 +244,76 @@ namespace Glory.Provider.DataCache.Redis.Core
             return retVal;
         }
 
+        public override long IncrementValueInHash(string hashId, string key, int count)
+        {
+            string strKey = GetCacheKey(key);
+            using (var redisClient = this.GetRedisClient())
+            {
+                return redisClient.IncrementValueInHash(strKey, key, count);
+            }
+        }
+
+        public override long DecrementValueInHash(string hashId, string key, int count)
+        {
+            string strKey = GetCacheKey(key);
+            using (var redisClient = this.GetRedisClient())
+            {
+                return redisClient.DecrementValueInHash(strKey, key, count);
+            }
+        }
+
+        public override List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending)
+        {
+            string strKey = GetCacheKey(collectionKey);
+            using (var redisClient = this.GetRedisClient())
+            {
+                return redisClient.Sort<T>(strKey, byField, fieldIsNumber, skip, take, isAscending);
+            }
+        }
+
         public override bool IsDistributedCache()
         {
             return true;
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private RedisClient GetRedisClient()
+        {
+            var cmdMap = CommandMap.Default;
+            switch (ServerType?.ToLower())
+            {
+                case "sentinel":
+                    cmdMap = CommandMap.Sentinel;
+                    break;
+                case "ssdb":
+                    cmdMap = CommandMap.SSDB;
+                    break;
+                case "twemproxy":
+                    cmdMap = CommandMap.Twemproxy;
+                    break;
+            }
+            var options = new ConfigurationOptions
+            {
+                CommandMap = cmdMap,
+                Password = this.Password,
+                ServiceName = this.MasterDB,
+                ClientName = this.ClientName,
+                Ssl = this.Ssl,
+                AllowAdmin = this.AllowAdmin,
+                ConnectTimeout = this.ConnectTimeout,
+                ConnectRetry = this.ConnectRetry,
+                AbortOnConnectFail = this.AbortOnConnectFail
+            };
+
+            foreach (string server in this.Servers.Split(','))
+            {
+                options.EndPoints.Add(server);
+            }
+            var redisClient = new RedisClient(options, this.DBNumber);
+            return redisClient;
         }
 
         private void ClearCacheInternal(string prefix)

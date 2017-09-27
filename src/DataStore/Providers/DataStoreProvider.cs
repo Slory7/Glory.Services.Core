@@ -119,6 +119,8 @@ namespace Glory.Services.Core.DataStore.Providers
 
         public abstract Task<bool> Update<T>(Expression<Func<T, bool>> filter, T doc);
 
+        public abstract Task<T> IncrementField<T>(Expression<Func<T, bool>> filter, string field, int amount);
+
         public abstract Task InsertStageData<T>(int stageMinutes, T doc, string createdDateField);
 
         #endregion

@@ -156,7 +156,7 @@ namespace Glory.Services.Core.DataCache.Providers
 
         #endregion
 
-        #region Public Methods
+        #region Public Abstract Methods
 
         /// <summary>
         /// Clears the specified scope.
@@ -188,7 +188,7 @@ namespace Glory.Services.Core.DataCache.Providers
 
         public abstract void Remove(string cacheKey, string scope = null);
 
-        public abstract long GetListCount<T>(string listName);
+        public abstract long GetListCount(string listName);
 
         public abstract T GetItemFromList<T>(string listName, int listIndex);
 
@@ -202,6 +202,8 @@ namespace Glory.Services.Core.DataCache.Providers
 
         public abstract void RemoveList(string listName);
 
+        public abstract long GetHashCount(string hashId);
+
         public abstract void SetEntryInHash<TKey, T>(string hashId, TKey key, T value);
 
         public abstract bool RemoveEntryFromHash<TKey>(string hashId, TKey key);
@@ -211,6 +213,12 @@ namespace Glory.Services.Core.DataCache.Providers
         public abstract long IncrementValue(string key, int count, int expiredMinutes, Func<long> initialCallBack);
 
         public abstract long DecrementValue(string key, int count, int expiredMinutes, Func<long> initialCallBack);
+
+         public abstract long IncrementValueInHash(string hashId, string key, int count);
+
+         public abstract long DecrementValueInHash(string hashId, string key, int count);
+
+         public abstract List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending);
 
         #endregion
 

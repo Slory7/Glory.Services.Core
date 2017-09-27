@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Glory.Services.Core</Description>
+    <Description>A .net core provider pattern wrapper for essential services: Data Cache, Event Queue and Data Store.</Description>
     <Version>0.9.1</Version>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>

@@ -102,11 +102,19 @@ namespace Glory.Provider.DataCache.Redis.Core
             Database.ListRemove(listName, strVal);
         }
 
+        public long GetHashCount(string hashId)
+        {
+            return Database.HashLength(hashId, CommandFlags.PreferSlave);
+        }
+
         public T GetValueFromHash<TKey, T>(string hashId, TKey key)
         {
             var strKey = JsonConvert.SerializeObject(key);
 
             var objVal = Database.HashGet(hashId, strKey, CommandFlags.PreferSlave);
+
+            if (!objVal.HasValue)
+                return default(T);
 
             return JsonConvert.DeserializeObject<T>(objVal);
         }
@@ -128,6 +136,16 @@ namespace Glory.Provider.DataCache.Redis.Core
             return Database.HashDelete(hashId, strKey);
         }
 
+        public long IncrementValueInHash(string hashId, string key, int count)
+        {
+            return Database.HashIncrement(hashId, key, count);
+        }
+
+        public long DecrementValueInHash(string hashId, string key, int count)
+        {
+            return Database.HashDecrement(hashId, key, count);
+        }
+
         public long IncrementValueBy(string key, int count)
         {
             return Database.StringIncrement(key, count);
@@ -136,6 +154,30 @@ namespace Glory.Provider.DataCache.Redis.Core
         public long DecrementValueBy(string key, int count)
         {
             return Database.StringDecrement(key, count);
+        }
+
+        public List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending)
+        {
+            var items = Database.Sort(collectionKey, skip, take
+                , order: isAscending ? Order.Ascending : Order.Descending
+                , sortType: fieldIsNumber ? SortType.Numeric : SortType.Alphabetic
+                , by: byField
+                , flags: CommandFlags.PreferSlave
+                );
+            if (items == null)
+            {
+                return new List<T>(0);
+            }
+            else
+            {
+                var list = new List<T>(items.Length);
+                foreach (var itm in items)
+                {
+                    var obj = JsonConvert.DeserializeObject<T>(itm);
+                    list.Add(obj);
+                }
+                return list;
+            }
         }
 
         public void RemoveAll(IEnumerable<string> keys)

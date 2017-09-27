@@ -3,8 +3,12 @@ using System;
 using System.Collections.Generic;
 using Glory.Services.Core.DataCache.Parameters;
 using System.Threading;
+using System.Collections;
+using System.Linq;
+using System.Linq.Dynamic.Core;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Logging;
+using Glory.Services.Core.Common;
 
 namespace Glory.Services.Core.DataCache.Providers
 {
@@ -49,10 +53,10 @@ namespace Glory.Services.Core.DataCache.Providers
 
             if (scope != null)
             {
-                var ctsScope = DataCacheManager.GetUniqueLockObject<CancellationTokenSource>(GetCacheKeyPrefix(scope));
+                var ctsScope = UniqueObject.GetUniqueObject<CancellationTokenSource>(GetCacheKeyPrefix(scope));
                 options.AddExpirationToken(new CancellationChangeToken(ctsScope.Token));
             }
-            var ctsDefault = DataCacheManager.GetUniqueLockObject<CancellationTokenSource>(GetCacheKeyPrefix(_defaultScopeName));
+            var ctsDefault = UniqueObject.GetUniqueObject<CancellationTokenSource>(GetCacheKeyPrefix(_defaultScopeName));
             options.AddExpirationToken(new CancellationChangeToken(ctsDefault.Token));
 
             string strKey = GetCacheKey(cacheKey, scope);
@@ -65,65 +69,64 @@ namespace Glory.Services.Core.DataCache.Providers
             _cache.Remove(strKey);
         }
 
-        public override long GetListCount<T>(string listName)
+        public override long GetListCount(string listName)
         {
             string strKey = GetCacheKey(listName);
-            object objValue = _cache.Get(strKey);
+
+            var objValue = _cache.Get<ICollection>(strKey);
+
             if (objValue != null)
-                return ((List<T>)objValue).Count;
+                return objValue.Count;
+
             return 0;
         }
 
         public override T GetItemFromList<T>(string listName, int listIndex)
         {
             string strKey = GetCacheKey(listName);
-            object objValue = _cache.Get(strKey);
+
+            var objValue = _cache.Get<List<T>>(strKey);
+
             if (objValue != null)
-                return ((List<T>)objValue)[listIndex];
+                return objValue[listIndex];
+
             return default(T);
         }
 
         public override void SetItemInList<T>(string listName, int listIndex, T value)
         {
             string strKey = GetCacheKey(listName);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<List<T>>(strKey);
 
             if (objValue != null)
             {
-                ((List<T>)objValue)[listIndex] = value;
+                objValue[listIndex] = value;
             }
         }
 
         public override void EnqueueList<T>(string listName, T value)
         {
             string strKey = GetCacheKey(listName);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<List<T>>(strKey);
 
-            List<T> objList = null;
             if (objValue == null)
             {
-                objList = new List<T>();
-                this.Insert(listName, objList);
+                objValue = SafeCreate<List<T>>(strKey);
             }
-            else
-            {
-                objList = (List<T>)objValue;
-            }
-            objList.Add(value);
+            objValue.Add(value);
         }
 
         public override T DequeueList<T>(string listName)
         {
             string strKey = GetCacheKey(listName);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<List<T>>(strKey);
 
             if (objValue != null)
             {
-                var objList = ((List<T>)objValue);
-                if (objList.Count > 0)
+                if (objValue.Count > 0)
                 {
-                    var tValue = objList[0];
-                    objList.RemoveAt(0);
+                    var tValue = objValue[0];
+                    objValue.RemoveAt(0);
                     return tValue;
                 }
             }
@@ -133,14 +136,13 @@ namespace Glory.Services.Core.DataCache.Providers
         public override void RemoveFromList<T>(string listName, T value)
         {
             string strKey = GetCacheKey(listName);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<List<T>>(strKey);
 
             if (objValue != null)
             {
-                var objList = ((List<T>)objValue);
-                if (objList.Count > 0)
+                if (objValue.Count > 0)
                 {
-                    objList.Remove(value);
+                    objValue.Remove(value);
                 }
             }
         }
@@ -151,50 +153,52 @@ namespace Glory.Services.Core.DataCache.Providers
             this.Remove(strKey);
         }
 
+        public override long GetHashCount(string hashId)
+        {
+            string strKey = GetCacheKey(hashId);
+
+            var objValue = _cache.Get<IDictionary>(strKey);
+
+            if (objValue != null)
+                return objValue.Count;
+
+            return 0;
+        }
+
         public override void SetEntryInHash<TKey, T>(string hashId, TKey key, T value)
         {
             string strKey = GetCacheKey(hashId);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<Dictionary<TKey, T>>(strKey);
 
-            Dictionary<TKey, T> objDic = null;
             if (objValue == null)
             {
-                objDic = new Dictionary<TKey, T>();
-                this.Insert(hashId, objDic);
+                objValue = SafeCreate<Dictionary<TKey, T>>(strKey);
             }
-            else
-            {
-                objDic = (Dictionary<TKey, T>)objValue;
-            }
-            objDic.Add(key, value);
+            objValue.Add(key, value);
         }
 
         public override bool RemoveEntryFromHash<TKey>(string hashId, TKey key)
         {
             string strKey = GetCacheKey(hashId);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<Dictionary<TKey, object>>(strKey);
 
             if (objValue != null)
             {
-                var objDic = (Dictionary<TKey, object>)objValue;
-                return objDic.Remove(key);
+                return objValue.Remove(key);
             }
-
             return false;
         }
 
         public override T GetValueFromHash<TKey, T>(string hashId, TKey key)
         {
             string strKey = GetCacheKey(hashId);
-            object objValue = _cache.Get(strKey);
+            var objValue = _cache.Get<Dictionary<TKey, T>>(strKey);
 
             if (objValue != null)
             {
-                var objDic = (Dictionary<TKey, T>)objValue;
-                if (objDic.ContainsKey(key))
-                    return objDic[key];
+                if (objValue.ContainsKey(key))
+                    return objValue[key];
             }
-
             return default(T);
         }
 
@@ -236,16 +240,94 @@ namespace Glory.Services.Core.DataCache.Providers
             return val;
         }
 
+        public override long IncrementValueInHash(string hashId, string key, int count)
+        {
+            string strKey = GetCacheKey(hashId);
+            var objValue = _cache.Get<Dictionary<string, long>>(strKey);
+
+            if (objValue == null)
+            {
+                objValue = SafeCreate<Dictionary<string, long>>(strKey);
+            }
+            long retVal;
+            if (objValue.ContainsKey(key))
+            {
+                retVal = objValue[key] + count;
+                objValue[key] = retVal;
+            }
+            else
+            {
+                retVal = count;
+                objValue.Add(key, count);
+            }
+            return retVal;
+        }
+
+        public override long DecrementValueInHash(string hashId, string key, int count)
+        {
+            return IncrementValueInHash(hashId, key, 0 - count);
+        }
+
+        public override List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending)
+        {
+            string strKey = GetCacheKey(collectionKey);
+            var objValue = _cache.Get(strKey);
+            if (objValue != null)
+            {
+                var objCollection = objValue as ICollection<T>;
+                if (objCollection == null)
+                {
+                    var objDic = objValue as IDictionary<object, T>;
+                    if (objDic != null)
+                    {
+                        objCollection = objDic.Values;
+                    }
+                }
+                var query = objCollection.AsQueryable();
+                if (skip > 0)
+                    query = query.Skip(skip);
+                if (take > 0)
+                    query = query.Take(take);
+                IOrderedQueryable<T> orderedQueryable = null;
+                if (byField == null)
+                    orderedQueryable = isAscending ? query.OrderBy(c => c) : query.OrderByDescending(c => c);
+                else
+                    orderedQueryable = query.OrderBy(byField + (isAscending ? " ASC" : " DESC"));
+                var resultList = orderedQueryable.ToList();
+                return resultList;
+            }
+            return new List<T>(0);
+        }
+
         public override void Clear(string scope = null)
         {
             var strScope = scope ?? _defaultScopeName;
-            var ctsScope = DataCacheManager.GetUniqueLockObject<CancellationTokenSource>(GetCacheKeyPrefix(strScope));
+            var ctsScope = UniqueObject.GetUniqueObject<CancellationTokenSource>(GetCacheKeyPrefix(strScope));
             ctsScope.Cancel();
         }
 
         public override bool IsDistributedCache()
         {
             return false;
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private T SafeCreate<T>(string itemKey) where T : new()
+        {
+            lock (UniqueObject.GetUniqueObject<object>(itemKey))
+            {
+                object objValue = _cache.Get(itemKey);
+                if (objValue == null)
+                {
+                    var objItem = new T();
+                    this.Insert(itemKey, objItem);
+                    return objItem;
+                }
+                return (T)objValue;
+            }
         }
 
         #endregion

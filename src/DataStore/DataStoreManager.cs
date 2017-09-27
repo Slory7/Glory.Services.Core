@@ -11,34 +11,39 @@ namespace Glory.Services.Core.DataStore
 {
     public class DataStoreManager : IDataStoreManager
     {
-        public IQueryable<T> Queryable<T>(ProviderLevel level = ProviderLevel.Normal)
+        public IQueryable<T> Queryable<T>(ProviderLevel level)
         {
             return DataStoreProvider.Instance(level).Queryable<T>();
         }
 
-        public async Task Insert<T>(T doc, ProviderLevel level = ProviderLevel.Normal)
+        public async Task Insert<T>(T doc, ProviderLevel level)
         {
             await DataStoreProvider.Instance(level).Insert(doc);
         }
 
-        public async Task InsertMany<T>(IEnumerable<T> documents, ProviderLevel level = ProviderLevel.Normal)
+        public async Task InsertMany<T>(IEnumerable<T> documents, ProviderLevel level)
         {
             await DataStoreProvider.Instance(level).InsertMany(documents);
         }
 
-        public async Task<bool> Remove<T>(Expression<Func<T, bool>> filter, ProviderLevel level = ProviderLevel.Normal)
+        public async Task<bool> Remove<T>(Expression<Func<T, bool>> filter, ProviderLevel level)
         {
             return await DataStoreProvider.Instance(level).Remove(filter);
         }
 
-        public async Task<bool> RemoveMany<T>(Expression<Func<T, bool>> filter, ProviderLevel level = ProviderLevel.Normal)
+        public async Task<bool> RemoveMany<T>(Expression<Func<T, bool>> filter, ProviderLevel level)
         {
             return await DataStoreProvider.Instance(level).RemoveMany(filter);
         }
 
-        public async Task<bool> Update<T>(Expression<Func<T, bool>> filter, T doc, ProviderLevel level = ProviderLevel.Normal)
+        public async Task<bool> Update<T>(Expression<Func<T, bool>> filter, T doc, ProviderLevel level)
         {
             return await DataStoreProvider.Instance(level).Update(filter, doc);
+        }
+
+        public async Task<T> IncrementField<T>(Expression<Func<T, bool>> filter, string field, int amount, ProviderLevel level)
+        {
+            return await DataStoreProvider.Instance(level).IncrementField(filter, field, amount);
         }
 
         public IQueryable<T> StageQueryable<T>(int stageOnMinutes)

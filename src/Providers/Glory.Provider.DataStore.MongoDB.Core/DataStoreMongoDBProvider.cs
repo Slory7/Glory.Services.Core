@@ -106,6 +106,7 @@ namespace Glory.Provider.DataStore.MongoDB.Core
 
         public override async Task<bool> Update<T>(Expression<Func<T, bool>> filter, T doc)
         {
+            _logger.LogTrace("Update:start");
 
             var collection = GetCollection<T>();
             var result = await collection.ReplaceOneAsync<T>(filter, doc);
@@ -113,6 +114,19 @@ namespace Glory.Provider.DataStore.MongoDB.Core
             _logger.LogTrace("Update:end");
 
             return result.IsAcknowledged;
+        }
+
+        public override async Task<T> IncrementField<T>(Expression<Func<T, bool>> filter, string field, int amount)
+        {
+            _logger.LogTrace("IncrementField:start");
+
+            var collection = GetCollection<T>();
+            var updateInc = Builders<T>.Update.Inc(field, amount);
+            var result = await collection.FindOneAndUpdateAsync<T>(filter, updateInc);
+
+            _logger.LogTrace("IncrementField:end");
+
+            return result;
         }
 
         public override async Task InsertStageData<T>(int stageMinutes, T doc, string createdDateField)
