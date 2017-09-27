@@ -18,7 +18,7 @@ namespace Glory.Services.Core.DataCache
         void RemoveCacheLocalDistributed(string cacheKey);
         T GetItemFromList<T>(string listName, int listIndex, ProviderLevel level = ProviderLevel.Normal);
         long GetListCount(string listName, ProviderLevel level = ProviderLevel.Normal);
-        long GetHashCount(string listName, ProviderLevel level = ProviderLevel.Normal);
+        long GetHashCount(string hashId, ProviderLevel level = ProviderLevel.Normal);
         T GetValueFromHash<TKey, T>(string hashId, TKey key, ProviderLevel level = ProviderLevel.Normal);
         long IncrementValue(string key, Func<long> initialCallBack, int count = 1, int expiredMinutes = 0, ProviderLevel level = ProviderLevel.Normal);
         void RemoveCache(string cacheKey);
