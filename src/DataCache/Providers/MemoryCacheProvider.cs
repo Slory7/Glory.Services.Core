@@ -81,6 +81,20 @@ namespace Glory.Services.Core.DataCache.Providers
             return 0;
         }
 
+        public override List<T> GetListRange<T>(string listName, long start = 0, long stop = -1)
+        {
+            string strKey = GetCacheKey(listName);
+
+            var objValue = _cache.Get<List<T>>(strKey);
+
+            var endIndex = stop > 0 ? start + stop : objValue.Count + stop;
+            int nstart = (int)start;
+            int nEndIndex = (int)endIndex;
+
+            var objList = objValue.AsQueryable().Skip(nstart).Take(nEndIndex).ToList();
+            return objList;
+        }
+
         public override T GetItemFromList<T>(string listName, int listIndex)
         {
             string strKey = GetCacheKey(listName);
@@ -297,6 +311,17 @@ namespace Glory.Services.Core.DataCache.Providers
                 return resultList;
             }
             return new List<T>(0);
+        }
+
+        public override bool ExpireItem(string key, DateTime? expireTime)
+        {
+            string strKey = GetCacheKey(key);
+
+            object objValue = _cache.Get(strKey);
+
+            this.Insert(key, objValue, absoluteExpiration: expireTime);
+
+            return true;
         }
 
         public override void Clear(string scope = null)

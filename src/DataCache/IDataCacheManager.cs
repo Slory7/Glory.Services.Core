@@ -18,6 +18,7 @@ namespace Glory.Services.Core.DataCache
         void RemoveCacheLocalDistributed(string cacheKey);
         T GetItemFromList<T>(string listName, int listIndex, ProviderLevel level = ProviderLevel.Normal);
         long GetListCount(string listName, ProviderLevel level = ProviderLevel.Normal);
+        List<T> GetListRange<T>(string listName, ProviderLevel level = ProviderLevel.Normal, long start = 0, long stop = -1);
         long GetHashCount(string hashId, ProviderLevel level = ProviderLevel.Normal);
         T GetValueFromHash<TKey, T>(string hashId, TKey key, ProviderLevel level = ProviderLevel.Normal);
         long IncrementValue(string key, Func<long> initialCallBack, int count = 1, int expiredMinutes = 0, ProviderLevel level = ProviderLevel.Normal);
@@ -32,5 +33,6 @@ namespace Glory.Services.Core.DataCache
         long IncrementValueInHash(string hashId, string key, int count, ProviderLevel level = ProviderLevel.Normal);
         long DecrementValueInHash(string hashId, string key, int count, ProviderLevel level = ProviderLevel.Normal);
         List<T> Sort<T>(string collectionKey, string byField = null, bool fieldIsNumber = true, int skip = 0, int take = -1, bool isAscending = true, ProviderLevel level = ProviderLevel.Normal);
+        bool ExpireItem(string cacheKey, DateTime? expireTime, ProviderLevel level = ProviderLevel.Normal);
     }
 }

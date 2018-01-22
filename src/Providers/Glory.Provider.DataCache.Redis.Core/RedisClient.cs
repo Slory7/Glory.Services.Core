@@ -68,6 +68,17 @@ namespace Glory.Provider.DataCache.Redis.Core
             return Database.ListLength(listName, CommandFlags.PreferSlave);
         }
 
+        public List<T> GetListRange<T>(string listName, long start = 0, long stop = -1)
+        {
+            var values= Database.ListRange(listName, start, stop, CommandFlags.PreferSlave);
+            var objList = new List<T>(values.Length);
+            foreach (var objValue in values)
+            {
+                objList.Add(JsonConvert.DeserializeObject<T>(objValue));
+            }
+            return objList;
+        }
+
         public T GetItemFromList<T>(string listName, int listIndex)
         {
             var objValue = Database.ListGetByIndex(listName, listIndex, CommandFlags.PreferSlave);
@@ -207,6 +218,11 @@ namespace Glory.Provider.DataCache.Redis.Core
             }
 
             return keys.Select(x => (string)x);
+        }
+
+        public bool ExpireItem(string key, DateTime? expireTime)
+        {
+            return Database.KeyExpire(key, expireTime);
         }
     }
 }

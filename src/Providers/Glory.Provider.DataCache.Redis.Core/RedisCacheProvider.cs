@@ -91,7 +91,15 @@ namespace Glory.Provider.DataCache.Redis.Core
                 return lCount;
             }
         }
-
+        public override List<T> GetListRange<T>(string listName, long start = 0, long stop = -1)
+        {
+            var key = GetCacheKey(listName);
+            using (var redisClient = this.GetRedisClient())
+            {
+                var objValues = redisClient.GetListRange<T>(listName, start, stop);
+                return objValues;
+            }
+        }
         public override T GetItemFromList<T>(string listName, int listIndex)
         {
             var key = GetCacheKey(listName);
@@ -268,6 +276,15 @@ namespace Glory.Provider.DataCache.Redis.Core
             using (var redisClient = this.GetRedisClient())
             {
                 return redisClient.Sort<T>(strKey, byField, fieldIsNumber, skip, take, isAscending);
+            }
+        }
+
+        public override bool ExpireItem(string key, DateTime? expireTime)
+        {
+            string strKey = GetCacheKey(key);
+            using (var redisClient = this.GetRedisClient())
+            {
+                return redisClient.ExpireItem(key, expireTime);
             }
         }
 

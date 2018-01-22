@@ -190,6 +190,8 @@ namespace Glory.Services.Core.DataCache.Providers
 
         public abstract long GetListCount(string listName);
 
+        public abstract List<T> GetListRange<T>(string listName, long start = 0, long stop = -1);
+
         public abstract T GetItemFromList<T>(string listName, int listIndex);
 
         public abstract void SetItemInList<T>(string listName, int listIndex, T value);
@@ -219,6 +221,8 @@ namespace Glory.Services.Core.DataCache.Providers
          public abstract long DecrementValueInHash(string hashId, string key, int count);
 
          public abstract List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending);
+
+        public abstract bool ExpireItem(string key, DateTime? expireTime);
 
         #endregion
 

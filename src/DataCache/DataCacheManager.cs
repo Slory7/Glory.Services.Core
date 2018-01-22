@@ -101,6 +101,12 @@ namespace Glory.Services.Core.DataCache
             return count;
         }
 
+        public List<T> GetListRange<T>(string listName, ProviderLevel level, long start = 0, long stop = -1)
+        {
+            var items = CachingProvider.Instance(level).GetListRange<T>(listName, start, stop);
+            return items;
+        }
+
         public T GetItemFromList<T>(string listName, int listIndex, ProviderLevel level)
         {
             var objValue = CachingProvider.Instance(level).GetItemFromList<T>(listName, listIndex);
@@ -221,6 +227,11 @@ namespace Glory.Services.Core.DataCache
         public List<T> Sort<T>(string collectionKey, string byField, bool fieldIsNumber, int skip, int take, bool isAscending, ProviderLevel level)
         {
             return CachingProvider.Instance(level).Sort<T>(collectionKey, byField, fieldIsNumber, skip, take, isAscending);
+        }
+
+        public bool ExpireItem(string cacheKey, DateTime? expireTime, ProviderLevel level)
+        {
+            return CachingProvider.Instance(level).ExpireItem(cacheKey, expireTime);
         }
 
         public void ClearCache()
