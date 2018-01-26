@@ -15,7 +15,7 @@ namespace Glory.Provider.DataCache.Redis.Core
         private readonly ILogger<RedisCacheProvider> _logger;
         public RedisCacheProvider(ILogger<RedisCacheProvider> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         #endregion

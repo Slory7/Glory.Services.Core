@@ -30,7 +30,7 @@ namespace Glory.Services.Core.EventQueue.Providers
             var providerConfig = Extensions.GetService<EventQueueProviderConfiguration>();
             if (providerConfig == null)
             {
-                defaultEventQueueProvider = Extensions.GetService<InsideEventQueueProvider>();
+                throw new ArgumentNullException(nameof(providerConfig), "eventQueue config section is missing.");
             }
             else
             {

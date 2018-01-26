@@ -15,14 +15,12 @@ namespace Glory.Provider.DataStore.MongoDB.Core
         #region Constructor
 
         private readonly ILogger<DataStoreMongoDBProvider> _logger;
-        private readonly IDataCacheManager _dataCacheManager;
 
-        public DataStoreMongoDBProvider(ILogger<DataStoreMongoDBProvider> logger
-            , IDataCacheManager dataCacheManager
+        public DataStoreMongoDBProvider(
+            ILogger<DataStoreMongoDBProvider> logger
             )
         {
-            _logger = logger;
-            _dataCacheManager = dataCacheManager;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         #endregion
@@ -136,9 +134,10 @@ namespace Glory.Provider.DataStore.MongoDB.Core
             var collection = GetCollection<T>();
             if (stageMinutes > 0)
             {
+                var dataCacheManager = Services.Core.Extensions.GetService<IDataCacheManager>();
                 var now = DateTimeOffset.Now;
                 string cacheKey = "StageData_PurgeDate_M" + stageMinutes;
-                var lastPurgeTime = _dataCacheManager.GetCache<DateTimeOffset?>(cacheKey);
+                var lastPurgeTime = dataCacheManager.GetCache<DateTimeOffset?>(cacheKey);
                 if (lastPurgeTime == null || now.Subtract(lastPurgeTime.Value).TotalMinutes > stageMinutes)
                 {
                     var olderThanDate = now.AddMinutes(0 - stageMinutes);
@@ -147,7 +146,7 @@ namespace Glory.Provider.DataStore.MongoDB.Core
 
                     _logger.LogInformation($"InsertStageData:Purge:Minutes:{stageMinutes}, Count:{result.DeletedCount}");
 
-                    _dataCacheManager.SetCache(cacheKey, now);
+                    dataCacheManager.SetCache(cacheKey, now);
                 }
             }
 

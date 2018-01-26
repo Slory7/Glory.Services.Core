@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <Description>RabbitMQ provider for Glory.Services.Core event queue service.</Description>
-    <Version>0.9.1</Version>
+    <Version>0.9.3</Version>
   </PropertyGroup>
   
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="Polly" Version="5.3.1" />
+    <PackageReference Include="Polly" Version="5.7.0" />
     <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
   </ItemGroup>
   

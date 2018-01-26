@@ -12,54 +12,88 @@ namespace Glory.Services.Core
     public static class Extensions
     {
         private static IServiceProvider _serviceProvider;
-
-        public static IServiceCollection RegisterGloryServices(this IServiceCollection services, IConfigurationRoot configuration)
+        private static IServiceProvider ServiceProvider
         {
-            services.AddMemoryCache();
+            get
+            {
+                if (_serviceProvider == null)
+                    throw new ArgumentNullException(nameof(_serviceProvider), "You should call ConfigureGloryProviders method.");
+                return _serviceProvider;
+            }
+            set { _serviceProvider = value; }
+        }
+
+        public static IServiceCollection RegisterGloryServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            if (configuration == null)
+                throw new ArgumentNullException(nameof(configuration));
 
             services.AddTransient<CacheProviderConfiguration>();
-            var cacheProviderConfig = ProviderConfigurationHandler.Create<CacheProviderConfiguration>(configuration?.GetSection("caching"));
-            cacheProviderConfig?.RegisterProvidersType(services);
-            services.AddTransient((sp) => cacheProviderConfig);
+            var cacheProviderConfig = ProviderConfigurationHandler.Create<CacheProviderConfiguration>(configuration.GetSection("caching"));
+            if (cacheProviderConfig != null)
+            {
+                services.AddMemoryCache();
+                cacheProviderConfig.RegisterProvidersType(services);
+                services.AddTransient((sp) => cacheProviderConfig);
+            }
 
-            services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-            services.AddSingleton<IExternalSubscriptionsManager, ExternalSubscriptionsManager>();
-            services.AddTransient<ExternalSubscriberHandler>();
-            services.AddTransient<InsideEventQueueProvider>();
-            var eventQueueProviderConfig = ProviderConfigurationHandler.Create<EventQueueProviderConfiguration>(configuration?.GetSection("eventQueue"));
-            eventQueueProviderConfig?.RegisterProvidersType(services);
-            services.AddTransient((sp) => eventQueueProviderConfig);
+            var eventQueueProviderConfig = ProviderConfigurationHandler.Create<EventQueueProviderConfiguration>(configuration.GetSection("eventQueue"));
+            if (eventQueueProviderConfig != null)
+            {
+                services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
+                services.AddSingleton<IExternalSubscriptionsManager, ExternalSubscriptionsManager>();
+                services.AddTransient<ExternalSubscriberHandler>();
+                services.AddTransient<InsideEventQueueProvider>();
+                eventQueueProviderConfig.RegisterProvidersType(services);
+                services.AddTransient((sp) => eventQueueProviderConfig);
+            }
 
-            var dataStoreProviderConfig = ProviderConfigurationHandler.Create<DataStoreProviderConfiguration>(configuration?.GetSection("dataStore"));
-            dataStoreProviderConfig?.RegisterProvidersType(services);
-            services.AddTransient((sp) => dataStoreProviderConfig);
+            var dataStoreProviderConfig = ProviderConfigurationHandler.Create<DataStoreProviderConfiguration>(configuration.GetSection("dataStore"));
+            if (dataStoreProviderConfig != null)
+            {
+                dataStoreProviderConfig.RegisterProvidersType(services);
+                services.AddTransient((sp) => dataStoreProviderConfig);
+            }
 
             return services;
         }
 
         public static IServiceProvider ConfigureGloryProviders(this IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
 
-            var externalManger = GetService<IExternalSubscriptionsManager>();
-            externalManger.RegisterAsIntegrationEvent();
+            var externalManger = TryGetService<IExternalSubscriptionsManager>();
+            externalManger?.RegisterAsIntegrationEvent();
 
             return serviceProvider;
         }
 
-        public static T GetService<T>()
+        public static T GetService<T>() where T : class
         {
-            return _serviceProvider.GetService<T>();
+            return ServiceProvider.GetService<T>();
+        }
+
+        public static T TryGetService<T>() where T : class
+        {
+            object obj = null;
+            try
+            {
+                obj = GetService(typeof(T));
+            }
+            catch
+            {
+            }
+            return obj as T;
         }
 
         public static object GetService(Type serviceType)
         {
-            return _serviceProvider.GetService(serviceType);
+            return ServiceProvider.GetService(serviceType);
         }
 
         public static object GetRequiredService(Type serviceType)
         {
-            return _serviceProvider.GetRequiredService(serviceType);
+            return ServiceProvider.GetRequiredService(serviceType);
         }
     }
 }

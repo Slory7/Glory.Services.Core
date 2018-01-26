@@ -19,8 +19,8 @@ namespace Glory.Services.Core.EventQueue.Providers
         public InsideEventQueueProvider(IEventBusSubscriptionsManager subsManager
             , ILogger<InsideEventQueueProvider> logger)
         {
-            _subsManager = subsManager;
-            _logger = logger;
+            _subsManager = subsManager ?? throw new ArgumentNullException(nameof(subsManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         #endregion

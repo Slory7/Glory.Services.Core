@@ -19,7 +19,7 @@ namespace Glory.Services.Core.DataCache
         private readonly ILogger _logger;
         public DataCacheManager(ILogger<DataCacheManager> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         #region Public Methods

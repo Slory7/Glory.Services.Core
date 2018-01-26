@@ -20,8 +20,8 @@ namespace Glory.Services.Core.DataStore.Providers
             , ILogger<MemoryDataStoreProvider> logger
             )
         {
-            _cacheManager = cacheManager;
-            _logger = logger;
+            _cacheManager = cacheManager ?? throw new ArgumentNullException(nameof(cacheManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         #region Abstract Method Implementation
@@ -31,7 +31,7 @@ namespace Glory.Services.Core.DataStore.Providers
             string cacheKey = typeof(T).Name;
             await Task.Run(() =>
             {
-                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
                   {
                       return new List<T>();
                   });
@@ -44,7 +44,7 @@ namespace Glory.Services.Core.DataStore.Providers
             string cacheKey = typeof(T).Name;
             await Task.Run(() =>
             {
-                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
                   {
                       return new List<T>();
                   });
@@ -56,7 +56,7 @@ namespace Glory.Services.Core.DataStore.Providers
         {
             string cacheKey = typeof(T).Name;
 
-            var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+            var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
               {
                   return new List<T>();
               });
@@ -68,7 +68,7 @@ namespace Glory.Services.Core.DataStore.Providers
             string cacheKey = typeof(T).Name;
             await Task.Run(() =>
             {
-                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
                   {
                       return new List<T>();
                   });
@@ -85,7 +85,7 @@ namespace Glory.Services.Core.DataStore.Providers
             string cacheKey = typeof(T).Name;
             await Task.Run(() =>
             {
-                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
                   {
                       return new List<T>();
                   });
@@ -100,7 +100,7 @@ namespace Glory.Services.Core.DataStore.Providers
             string cacheKey = typeof(T).Name;
             await Task.Run(() =>
             {
-                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
                   {
                       return new List<T>();
                   });
@@ -119,7 +119,7 @@ namespace Glory.Services.Core.DataStore.Providers
             T item = default(T);
             await Task.Run(() =>
             {
-                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
+                var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
                   {
                       return new List<T>();
                   });
@@ -148,10 +148,10 @@ namespace Glory.Services.Core.DataStore.Providers
         public override async Task InsertStageData<T>(int stageMinutes, T doc, string createdDateField)
         {
             string cacheKey = typeof(T).Name + "_" + stageMinutes;
-            var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey), (args) =>
-            {
-                return new List<T>();
-            });
+            var list = _cacheManager.GetCachedData(new CacheItemArgs(cacheKey, ProviderLevel.High), (args) =>
+             {
+                 return new List<T>();
+             });
 
             if (stageMinutes > 0 && list.Count > 0)
             {

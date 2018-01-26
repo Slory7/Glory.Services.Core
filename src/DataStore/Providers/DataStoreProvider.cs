@@ -30,7 +30,7 @@ namespace Glory.Services.Core.DataStore.Providers
             var providerConfig = Extensions.GetService<DataStoreProviderConfiguration>();
             if (providerConfig == null)
             {
-                defaultProvider = Extensions.GetService<MemoryDataStoreProvider>();
+                throw new ArgumentNullException(nameof(providerConfig), "dataStore config section is missing.");
             }
             else
             {

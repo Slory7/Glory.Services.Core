@@ -36,7 +36,7 @@ namespace Glory.Services.Core.DataCache.Providers
             var providerConfig = Extensions.GetService<CacheProviderConfiguration>();
             if (providerConfig == null)
             {
-                defaultCachingProvider = Extensions.GetService<MemoryCacheProvider>();
+                throw new ArgumentNullException(nameof(providerConfig), "caching config section is missing.");
             }
             else
             {

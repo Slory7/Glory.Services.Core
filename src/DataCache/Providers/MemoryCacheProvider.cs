@@ -19,8 +19,8 @@ namespace Glory.Services.Core.DataCache.Providers
         private readonly IMemoryCache _cache;
         public MemoryCacheProvider(ILogger<MemoryCacheProvider> logger, IMemoryCache cache)
         {
-            _logger = logger;
-            _cache = cache;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
 
         #region Abstract Method Implementation
