@@ -17,6 +17,13 @@ namespace Glory.Provider.DataCache.Redis.Core
             Database = connectionMultiplexer.GetDatabase(database);
         }
 
+        public RedisClient(string configuration)
+        {
+            connectionMultiplexer = ConnectionMultiplexer.Connect(configuration);
+
+            Database = connectionMultiplexer.GetDatabase();
+        }
+
         public IDatabase Database { get; }
 
         public void Dispose()

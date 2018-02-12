@@ -34,6 +34,8 @@ namespace Glory.Provider.DataCache.Redis.Core
         public string ClientName { get; set; }
         public bool AbortOnConnectFail { get; set; }
 
+        public string ConfigurationString { get; set; }
+
         #endregion
 
         #region Abstract Method Implementation             
@@ -299,37 +301,48 @@ namespace Glory.Provider.DataCache.Redis.Core
 
         private RedisClient GetRedisClient()
         {
-            var cmdMap = CommandMap.Default;
-            switch (ServerType?.ToLower())
+            ConfigurationOptions options = null;
+            if (String.IsNullOrEmpty(ConfigurationString))
             {
-                case "sentinel":
-                    cmdMap = CommandMap.Sentinel;
-                    break;
-                case "ssdb":
-                    cmdMap = CommandMap.SSDB;
-                    break;
-                case "twemproxy":
-                    cmdMap = CommandMap.Twemproxy;
-                    break;
-            }
-            var options = new ConfigurationOptions
-            {
-                CommandMap = cmdMap,
-                Password = this.Password,
-                ServiceName = this.MasterDB,
-                ClientName = this.ClientName,
-                Ssl = this.Ssl,
-                AllowAdmin = this.AllowAdmin,
-                ConnectTimeout = this.ConnectTimeout,
-                ConnectRetry = this.ConnectRetry,
-                AbortOnConnectFail = this.AbortOnConnectFail
-            };
+				var cmdMap = CommandMap.Default;
+				switch (ServerType?.ToLower())
+				{
+					case "sentinel":
+						cmdMap = CommandMap.Sentinel;
+						break;
+					case "ssdb":
+						cmdMap = CommandMap.SSDB;
+						break;
+					case "twemproxy":
+						cmdMap = CommandMap.Twemproxy;
+						break;
+				}
 
-            foreach (string server in this.Servers.Split(','))
-            {
-                options.EndPoints.Add(server);
+                options = new ConfigurationOptions
+                {
+                    CommandMap = cmdMap,
+                    DefaultDatabase = this.DBNumber,
+                    Password = this.Password,
+                    ServiceName = this.MasterDB,
+                    ClientName = this.ClientName,
+                    Ssl = this.Ssl,
+                    AllowAdmin = this.AllowAdmin,
+                    ConnectTimeout = this.ConnectTimeout,
+                    ConnectRetry = this.ConnectRetry,
+                    AbortOnConnectFail = this.AbortOnConnectFail
+                };
+
+                foreach (string server in this.Servers.Split(','))
+                {
+                    options.EndPoints.Add(server);
+                }
             }
-            var redisClient = new RedisClient(options, this.DBNumber);
+            else
+            {
+                options = ConfigurationOptions.Parse(ConfigurationString);
+            }
+
+            var redisClient = new RedisClient(options);
             return redisClient;
         }
 
